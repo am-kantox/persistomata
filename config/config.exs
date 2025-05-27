@@ -9,7 +9,8 @@ config :telemetria,
   events: []
 
 config :rambla,
-  stub: [
-    connections: [stubbed: :conn],
-    channels: [logger: [connection: :stubbed]]
+  clickhouse: [
+    # connections: [conn: "https://user:password@localhost:8123/some_database"],
+    connections: [conn: "http://default:password@localhost:8123/default"],
+    channels: [finitomata: [connection: :conn]]
   ]

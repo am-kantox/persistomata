@@ -33,12 +33,12 @@ defmodule Persistomata do
   @impl Supervisor
   @doc false
   def init(id) do
-    children = [
+    [
       {Infinitomata, finitomata(id)},
       {Antenna, antenna(id)},
-      {Rambla, name: rambla(id)}
+      {Rambla, name: rambla(id)},
+      {Persistomata.RamblaMatcher, id: id}
     ]
-
-    Supervisor.init(children, strategy: :one_for_one)
+    |> Supervisor.init(strategy: :one_for_one)
   end
 end

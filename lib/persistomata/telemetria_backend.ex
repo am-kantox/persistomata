@@ -55,11 +55,9 @@ defmodule Telemetria.Backend.Persistomata do
       mfa: mfa.capture,
       args: args,
       result: metadata.result,
-      now_monotonic: System.monotonic_time(:nanosecond),
-      times: measurements
+      now: System.os_time(),
+      times: measurements.system_time
     }
-
-    Logger.log(level, inspect(event))
 
     type = elem(type, 0)
 
@@ -120,6 +118,8 @@ defmodule Telemetria.Backend.Persistomata do
           | {:mutating, Finitomata.State.payload(), Finitomata.State.payload()}
           | {:errored, :init | :transition, any()}
   defp extract_type(fun, result, args)
+  defp extract_type(:safe_on_enter, _ok, [state, _]), do: {:state_changed, state}
+
   defp extract_type(:safe_on_start, {:stop, reason}, _payload), do: {:errored, :init, reason}
   defp extract_type(:safe_on_start, {_, payload}, _payload), do: {:init, payload}
   defp extract_type(:safe_on_start, _, [_, payload]), do: {:init, payload}
