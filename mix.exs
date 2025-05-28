@@ -47,12 +47,9 @@ defmodule Persistomata.MixProject do
   defp deps do
     [
       {:caterpillar, "~> 0.40"},
-      # {:finitomata, "~> 0.30"},
-      # {:telemetria, "~> 0.22"},
-      # {:rambla, "~> 1.2"},
-      {:finitomata, path: "../finitomata", override: true},
-      {:telemetria, path: "../telemetria", override: true},
-      {:rambla, path: "../rambla", override: true},
+      {:finitomata, "~> 0.30"},
+      {:telemetria, "~> 0.22"},
+      {:rambla, "~> 1.2"},
       {:antenna, "~> 0.4"},
       # dev / test
       {:doctest_formatter, "~> 0.2", runtime: false},

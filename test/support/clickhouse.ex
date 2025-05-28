@@ -11,6 +11,7 @@ defmodule Persistomata.Test.Clickhouse do
       CREATE TABLE "persistomata/test/turnstile"
         (
           monotonic Int64,
+          unique_integer Int64,
           id String,
           name String,
           node String,
@@ -19,7 +20,7 @@ defmodule Persistomata.Test.Clickhouse do
           payload JSON
         )
         ENGINE = MergeTree
-        PRIMARY KEY (monotonic)
+        PRIMARY KEY (monotonic, unique_integer)
       """,
       select: """
       SELECT * FROM "persistomata/test/turnstile"

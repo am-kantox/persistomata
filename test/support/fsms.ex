@@ -11,8 +11,6 @@ defmodule Persistomata.Test.Turnstile do
 
   use Finitomata, fsm: @fsm, auto_terminate: true
 
-  @behaviour Persistomata.RamblaEncoder
-
   def start_supervised(id, name) do
     Infinitomata.start_fsm(id, name, __MODULE__, 0)
   end
@@ -47,12 +45,14 @@ defmodule Persistomata.Test.Turnstile do
     {:error, :not_enough_funds}
   end
 
-  @impl Persistomata.RamblaEncoder
-  def decode(%{coins: payload}), do: {:ok, payload}
-  def decode(other), do: {:error, other}
+  # @behaviour Persistomata.RamblaEncoder
 
-  @impl Persistomata.RamblaEncoder
-  def encode(payload) when is_integer(payload), do: {:ok, {:json, %{coins: payload}}}
-  def encode(payload) when is_atom(payload), do: {:ok, {:json, %{state: payload}}}
-  def encode(other), do: {:error, other}
+  # @impl Persistomata.RamblaEncoder
+  # def decode(%{coins: payload}), do: {:ok, payload}
+  # def decode(other), do: {:error, other}
+
+  # @impl Persistomata.RamblaEncoder
+  # def encode(payload) when is_integer(payload), do: {:ok, {:json, %{coins: payload}}}
+  # def encode(payload) when is_atom(payload), do: {:ok, {:json, %{state: payload}}}
+  # def encode(other), do: {:error, other}
 end

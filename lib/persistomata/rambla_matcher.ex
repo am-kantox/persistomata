@@ -32,37 +32,107 @@ defmodule Persistomata.RamblaMatcher do
   def handle_match(channel, {:finitomata, %{} = event}) do
     with {:finitomata, module} <- event.group,
          table <- Macro.underscore(module),
-         timestamp <- get_in(event, [:times, :system]),
-         monotonic <- get_in(event, [:times, :unique_integer]) do
+         times <- event.times,
+         timestamp <- Keyword.get(times, :system),
+         monotonic <- Keyword.get(times, :monotonic),
+         unique_integer <- Keyword.get(times, :unique_integer) do
       {type, payload} =
         case event.type do
-          {:init, payload} -> {:init, payload}
-          {:state_changed, state} -> {:state, state}
-          {:mutating, _, payload} -> {:value, payload}
+          {:init, payload} -> {:init, %{value: payload}}
+          {:state_changed, state} -> {:state, %{state: state}}
+          {:mutating, _, payload} -> {:value, %{value: payload}}
         end
 
       payload =
         with true <- function_exported?(module, :encode, 1),
              {:ok, result} <- module.encode(payload),
              do: result,
-             else: (_ -> payload)
+             else: (_ -> {:json, naive_encode(payload)})
 
       message =
         %{
           table: "`#{table}`",
           message: %{
             monotonic: monotonic,
+            unique_integer: unique_integer,
             id: event.id,
             name: event.fini_name,
             channel: channel,
             type: type,
-            payload: payload,
             node: event.node,
-            timestamp: timestamp
+            timestamp: timestamp,
+            payload: payload
           }
         }
 
       Rambla.publish(:finitomata, message)
+    end
+  end
+
+  defp naive_encode(payload)
+
+  cond do
+    match?({:module, _}, Code.ensure_compiled(Jason.Encoder)) ->
+      defp naive_encode(%_{} = payload) do
+        case Jason.Encoder.impl_for(payload) do
+          nil ->
+            payload |> Map.from_struct() |> naive_encode()
+
+          module ->
+            opts =
+              payload |> Map.get(:__meta__, %{}) |> get_in([:encode_options]) |> Kernel.||([])
+
+            module.encode(payload, opts)
+        end
+      end
+
+    match?({:module, _}, Code.ensure_compiled(JSON.Encoder)) ->
+      defp naive_encode(%_{} = payload) do
+        case JSON.Encoder.impl_for(payload) do
+          nil ->
+            payload |> Map.from_struct() |> naive_encode()
+
+          module ->
+            opts =
+              payload |> Map.get(:__meta__, %{}) |> get_in([:encode_options]) |> Kernel.||([])
+
+            module.encode(payload, opts)
+        end
+      end
+
+    true ->
+      defp naive_encode(%struct{} = payload) do
+        require Logger
+
+        Logger.warning(
+          "[🎁] encoding struct ‹" <>
+            inspect(struct) <> "› as a map, consider implementing the encoder"
+        )
+
+        payload |> Map.from_struct() |> naive_encode()
+      end
+  end
+
+  defp naive_encode(%{} = payload) do
+    Map.new(payload, fn {k, v} -> {k, naive_encode(v)} end)
+  end
+
+  defp naive_encode(payload) when is_list(payload) do
+    if Keyword.keyword?(payload),
+      do: payload |> Map.new() |> naive_encode(),
+      else: Enum.map(payload, &naive_encode/1)
+  end
+
+  defp naive_encode(payload)
+       when is_nil(payload) or is_boolean(payload) or is_number(payload) or is_binary(payload),
+       do: payload
+
+  defp naive_encode(payload) when is_atom(payload), do: Atom.to_string(payload)
+
+  defp naive_encode(payload) do
+    case String.Chars.impl_for(payload) do
+      nil -> inspect(payload)
+      module -> module.to_string(payload)
     end
   end
 end
