@@ -25,12 +25,27 @@ defmodule Persistomata.RamblaMatcher do
       channels: [:init, :state_changed, :mutating]
     )
 
+    Antenna.match(
+      Persistomata.antenna(id),
+      {:finitomata_bulk, _},
+      Persistomata.RamblaMatcher,
+      channels: [:init, :state_changed, :mutating]
+    )
+
     {:noreply, state}
   end
 
   @impl Antenna.Matcher
   def handle_match(channel, {:finitomata, %{} = event}) do
-    with {:finitomata, module} <- event.group,
+    Rambla.publish(:finitomata, transform_event(channel, event))
+  end
+
+  def handle_match(channel, {:finitomata_bulk, events}) do
+    Rambla.publish(:finitomata, Enum.map(events, &transform_event(channel, &1)))
+  end
+
+  defp transform_event(channel, event) do
+    with module <- event.group,
          table <- Macro.underscore(module),
          times <- event.times,
          timestamp <- Keyword.get(times, :system),
@@ -49,23 +64,20 @@ defmodule Persistomata.RamblaMatcher do
              do: result,
              else: (_ -> {:json, naive_encode(payload)})
 
-      message =
-        %{
-          table: "`#{table}`",
-          message: %{
-            monotonic: monotonic,
-            unique_integer: unique_integer,
-            id: event.id,
-            name: event.fini_name,
-            channel: channel,
-            type: type,
-            node: event.node,
-            timestamp: timestamp,
-            payload: payload
-          }
+      %{
+        table: "`#{table}`",
+        message: %{
+          monotonic: monotonic,
+          unique_integer: unique_integer,
+          id: event.id,
+          name: event.fini_name,
+          channel: channel,
+          type: type,
+          node: event.node,
+          timestamp: timestamp,
+          payload: payload
         }
-
-      Rambla.publish(:finitomata, message)
+      }
     end
   end
 

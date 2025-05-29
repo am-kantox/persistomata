@@ -49,7 +49,7 @@ defmodule Persistomata.MixProject do
       {:caterpillar, "~> 0.40"},
       {:finitomata, "~> 0.30"},
       {:telemetria, "~> 0.22"},
-      {:rambla, "~> 1.2"},
+      {:rambla, "~> 1.4"},
       {:antenna, "~> 0.4"},
       # dev / test
       {:doctest_formatter, "~> 0.2", runtime: false},

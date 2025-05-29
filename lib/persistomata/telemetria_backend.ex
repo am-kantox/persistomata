@@ -16,7 +16,32 @@ defmodule Telemetria.Backend.Persistomata do
   @impl true
   def return([:finitomata, :pool | _], _context), do: :ok
 
-  def return(block_id, context) do
+  def return(block_id, [%{} | _] = contextes) do
+    contextes
+    |> Enum.map(&reshape_context(block_id, &1))
+    |> Enum.group_by(fn {id, type, _, _} -> {id, type} end)
+    |> Enum.each(fn {{id, type}, events} ->
+      id
+      |> Persistomata.antenna()
+      |> Antenna.event(
+        [id, type, {id, type}],
+        {:finitomata_bulk, Enum.map(events, &elem(&1, 3))}
+      )
+    end)
+  end
+
+  def return(block_id, %{} = context) do
+    {id, type, fsm_name, event} = reshape_context(block_id, context)
+
+    id
+    |> Persistomata.antenna()
+    |> Antenna.event(
+      [id, type, {id, type}, {id, fsm_name}, {id, fsm_name, type}],
+      {:finitomata, event}
+    )
+  end
+
+  defp reshape_context(block_id, context) do
     {measurements, metadata} = Map.pop(context, :measurements, %{})
 
     {id, fini_id, fsm_name} =
@@ -61,12 +86,7 @@ defmodule Telemetria.Backend.Persistomata do
 
     type = elem(type, 0)
 
-    id
-    |> Persistomata.antenna()
-    |> Antenna.event(
-      [id, type, {id, type}, {id, fsm_name}, {id, fsm_name, type}],
-      {:finitomata, event}
-    )
+    {id, type, fsm_name, event}
   end
 
   @impl true
