@@ -29,3 +29,5 @@ peeper-*.tar
 
 # Dialyzer PLTs
 /.dialyzer/*plt*
+
+/config/.telemetria.config.json

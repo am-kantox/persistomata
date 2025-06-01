@@ -1,5 +1,15 @@
 defmodule Persistomata.RamblaMatcher do
-  @moduledoc false
+  @moduledoc """
+  This module happens to appear in the documentation as an example
+    of how one would approach building the highly customized versions
+    of `Persistomata` from scratch.
+
+  `Telemetria.Backend.Persistomata` would have `telemetría` events emitted on 
+    all the state changes. Here we subscribe to both `:finitomata` and 
+    `:finitomata_bulk` events (either of them would be emitted depending
+    on `config :telemetria, throttle: %{MyApp.MyFinitomata => {1_000, :all}}`
+    setting.)
+  """
 
   use GenServer
 
@@ -7,14 +17,17 @@ defmodule Persistomata.RamblaMatcher do
 
   @behaviour Antenna.Matcher
 
+  @doc false
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts)
   end
 
   @impl GenServer
+  @doc false
   def init(opts), do: {:ok, opts, {:continue, :rambla}}
 
   @impl GenServer
+  @doc "In this callback we assign matchers"
   def handle_continue(:rambla, state) do
     id = Keyword.get(state, :id)
 
@@ -36,6 +49,7 @@ defmodule Persistomata.RamblaMatcher do
   end
 
   @impl Antenna.Matcher
+  @doc "Handlers simply route the message(s) to `Rambla` instance"
   def handle_match(channel, {:finitomata, %{} = event}) do
     Rambla.publish(:finitomata, transform_event(channel, event))
   end

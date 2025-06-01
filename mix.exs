@@ -46,12 +46,13 @@ defmodule Persistomata.MixProject do
 
   defp deps do
     [
-      {:caterpillar, "~> 0.40"},
+      {:pillar, "~> 0.39"},
       {:finitomata, "~> 0.30"},
       {:telemetria, "~> 0.22"},
       {:rambla, "~> 1.4"},
       {:antenna, "~> 0.4"},
       # dev / test
+      {:mox, "~> 1.0", only: [:dev, :test]},
       {:doctest_formatter, "~> 0.2", runtime: false},
       {:enfiladex, "~> 0.3", only: [:dev, :test]},
       {:excoveralls, "~> 0.14", only: [:test], runtime: false},

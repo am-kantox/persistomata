@@ -1,6 +1,10 @@
 defmodule Telemetria.Backend.Persistomata do
   @moduledoc """
   The implementation of `Telemetria.Backend` for `:persistomata`.
+
+  This module happens to appear in the documentation as an example
+    of how one would approach building the highly customized versions
+    of `Persistomata` from scratch.
   """
 
   @behaviour Telemetria.Backend
@@ -8,12 +12,20 @@ defmodule Telemetria.Backend.Persistomata do
   require Logger
 
   @impl true
+  @doc false
   def entry(block_id), do: block_id
 
   @impl true
+  @doc false
   def update(block_id, _updates), do: block_id
 
   @impl true
+  @doc """
+  This function handles the main `telemetría` callback, reshapes the argument, and
+    fires an `Antenna.event/3`, which in turn will be handled by `Persistomata.RamblaMatcher`.
+
+  See the source code for details.
+  """
   def return([:finitomata, :pool | _], _context), do: :ok
 
   def return(block_id, [%{} | _] = contextes) do
@@ -90,9 +102,11 @@ defmodule Telemetria.Backend.Persistomata do
   end
 
   @impl true
+  @doc false
   def exit(_block_id), do: :ok
 
   @impl true
+  @doc false
   def reshape(updates), do: updates
 
   defp extract_id(nil), do: nil

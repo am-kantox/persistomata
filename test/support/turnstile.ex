@@ -9,7 +9,7 @@ defmodule Persistomata.Test.Turnstile do
     closed --> |off| inactive
   """
 
-  use Finitomata, fsm: @fsm, auto_terminate: true
+  use Finitomata, fsm: @fsm, auto_terminate: true, listener: :mox
 
   def start_supervised(id, name) do
     Infinitomata.start_fsm(id, name, __MODULE__, 0)
