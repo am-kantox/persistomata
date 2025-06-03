@@ -46,6 +46,6 @@ defmodule Persistomata.Test.CoffeeMachine do
   end
 
   def on_transition(_any_state, :power_off, _payload, coffee_count) do
-    {:ok, :idle, coffee_count}
+    {:ok, :off, coffee_count}
   end
 end
