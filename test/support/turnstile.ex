@@ -9,11 +9,24 @@ defmodule Persistomata.Test.Turnstile do
     closed --> |off| inactive
   """
 
-  use Finitomata, fsm: @fsm, auto_terminate: true, listener: :mox
+  use Finitomata,
+    fsm: @fsm,
+    auto_terminate: true,
+    persistency: Finitomata.Persistency.Protocol,
+    listener: :mox
 
-  def start_supervised(id, name) do
-    Infinitomata.start_fsm(id, name, __MODULE__, 0)
+  @derive {Jason.Encoder, only: [:coins]}
+  defstruct coins: 0
+
+  def start_supervised(id, name \\ nil) do
+    name = with nil <- name, do: UUID.uuid4()
+
+    with {:ok, pid} <- Infinitomata.start_fsm(id, name, __MODULE__, %__MODULE__{}),
+         do: {:ok, pid, name}
   end
+
+  @table_name Macro.underscore(__MODULE__)
+  def table_name, do: @table_name
 
   def walk(id, name, number \\ 1), do: Infinitomata.transition(id, name, {:walk, number})
   def coin(id, name, number \\ 1), do: Infinitomata.transition(id, name, {:coin, number})
@@ -21,38 +34,78 @@ defmodule Persistomata.Test.Turnstile do
 
   @impl Finitomata
 
-  def on_transition(:closed, :coin, number, coins) do
-    {:ok, :opened, coins + number}
+  def on_transition(:closed, :coin, number, %{coins: coins} = state) do
+    {:ok, :opened, %{state | coins: coins + number}}
   end
 
-  def on_transition(:closed, :off, _payload, 0) do
-    {:ok, :inactive, 0}
+  def on_transition(:closed, :off, _payload, %{coins: 0} = state) do
+    {:ok, :inactive, state}
   end
 
-  def on_transition(:opened, :coin, number, coins) do
-    {:ok, :opened, coins + number}
+  def on_transition(:opened, :coin, number, %{coins: coins} = state) do
+    {:ok, :opened, %{state | coins: coins + number}}
   end
 
-  def on_transition(:opened, :walk, coins, coins) do
-    {:ok, :closed, 0}
+  def on_transition(:opened, :walk, coins, %{coins: coins} = state) do
+    {:ok, :closed, %{state | coins: 0}}
   end
 
-  def on_transition(:opened, :walk, number, coins) when number < coins do
-    {:ok, :opened, coins - number}
+  def on_transition(:opened, :walk, number, %{coins: coins} = state) when number < coins do
+    {:ok, :opened, %{state | coins: coins - number}}
   end
 
-  def on_transition(:opened, :walk, number, coins) when number > coins do
+  def on_transition(:opened, :walk, number, %{coins: coins}) when number > coins do
     {:error, :not_enough_funds}
   end
 
   # @behaviour Persistomata.RamblaEncoder
 
   # @impl Persistomata.RamblaEncoder
-  # def decode(%{coins: payload}), do: {:ok, payload}
+  # def decode(%{coins: coins}), do: {:ok, coins}
+  # def decode(%{state: state}), do: {:ok, {:state, state}}
+  # def decode(%{} = payload), do: {:ok, payload}
   # def decode(other), do: {:error, other}
 
   # @impl Persistomata.RamblaEncoder
+  # def encode(%{} = payload), do: {:ok, {:json, payload}}
   # def encode(payload) when is_integer(payload), do: {:ok, {:json, %{coins: payload}}}
   # def encode(payload) when is_atom(payload), do: {:ok, {:json, %{state: payload}}}
   # def encode(other), do: {:error, other}
+
+  defimpl Finitomata.Persistency.Persistable do
+    @moduledoc """
+    Implementation of `Finitomata.Persistency.Persistable` for `Turnstile`.
+    """
+
+    require Logger
+
+    @doc "Loads the entity from some external storage"
+    def load(%Persistomata.Test.Turnstile{} = data), do: {:idle, data}
+
+    def load({{:via, Registry, {_, name}}, %turnstile{} = data}) do
+      case Persistomata.Pillar.load(turnstile, name) do
+        {:ok, %{state: state, value: value}} ->
+          {state, struct!(turnstile, value)}
+
+        {:ok, []} ->
+          {:idle, data}
+
+        error ->
+          Logger.error("Error loading value for ‹#{name}›: " <> inspect(error))
+          {:idle, data}
+      end
+    end
+
+    def load(data) do
+      Logger.warning("Unexpected argument to load: ‹" <> inspect(data) <> "›")
+      {:idle, %Persistomata.Test.Turnstile{coins: 0}}
+    end
+
+    @doc "Persists the transitioned entity to some external storage"
+    def store(_data, _info), do: :ok
+
+    @doc "Persists the error happened while an attempt to transition the entity"
+    def store_error(data, reason, info),
+      do: Logger.debug("STORE ERROR: " <> inspect(data: data, reason: reason, info: info))
+  end
 end

@@ -27,7 +27,7 @@ defmodule Mix.Tasks.Persistomata.Gen.Fsm do
                """
   use Mix.Task
 
-  @default_options [timer: false, auto_terminate: false]
+  @default_options [timer: false, auto_terminate: true]
 
   @impl Mix.Task
   def run(args) do

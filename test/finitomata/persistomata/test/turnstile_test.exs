@@ -12,7 +12,7 @@ defmodule Persistomata.Test.Turnstile.Test do
       [
         fsm: [
           implementation: Persistomata.Test.Turnstile,
-          payload: 0,
+          payload: %{coins: 0},
           options: [transition_count: 8]
         ],
         context: [parent: parent]
@@ -24,27 +24,27 @@ defmodule Persistomata.Test.Turnstile.Test do
         assert_state(:idle)
 
         assert_state :closed do
-          assert_payload(0)
+          assert_payload(%{coins: 0})
         end
 
       {:coin, 1} ->
         assert_state :opened do
-          assert_payload(1)
+          assert_payload(%{coins: 1})
         end
 
       {:coin, 1} ->
         assert_state :opened do
-          assert_payload(2)
+          assert_payload(%{coins: 2})
         end
 
       {:walk, 1} ->
         assert_state :opened do
-          assert_payload(1)
+          assert_payload(%{coins: 1})
         end
 
       {:walk, 1} ->
         assert_state :closed do
-          assert_payload(0)
+          assert_payload(%{coins: 0})
         end
 
       {:off, nil} ->
@@ -60,7 +60,7 @@ defmodule Persistomata.Test.Turnstile.Test do
       [
         fsm: [
           implementation: Persistomata.Test.Turnstile,
-          payload: 0,
+          payload: %{coins: 0},
           options: [transition_count: 7]
         ],
         context: [parent: parent]
@@ -74,17 +74,17 @@ defmodule Persistomata.Test.Turnstile.Test do
 
       {:coin, 1} ->
         assert_state :opened do
-          assert_payload(1)
+          assert_payload(%{coins: 1})
         end
 
       {:coin, 1} ->
         assert_state :opened do
-          assert_payload(2)
+          assert_payload(%{coins: 2})
         end
 
       {:walk, 2} ->
         assert_state :closed do
-          assert_payload(0)
+          assert_payload(%{coins: 0})
         end
 
       :off ->
@@ -100,7 +100,7 @@ defmodule Persistomata.Test.Turnstile.Test do
       [
         fsm: [
           implementation: Persistomata.Test.Turnstile,
-          payload: 0,
+          payload: %{coins: 0},
           options: [transition_count: 8]
         ],
         context: [parent: parent]
@@ -114,22 +114,22 @@ defmodule Persistomata.Test.Turnstile.Test do
 
       {:coin, 1} ->
         assert_state :opened do
-          assert_payload(1)
+          assert_payload(%{coins: 1})
         end
 
       {:walk, 1} ->
         assert_state :closed do
-          assert_payload(0)
+          assert_payload(%{coins: 0})
         end
 
       {:coin, 1} ->
         assert_state :opened do
-          assert_payload(1)
+          assert_payload(%{coins: 1})
         end
 
       {:walk, 1} ->
         assert_state :closed do
-          assert_payload(0)
+          assert_payload(%{coins: 0})
         end
 
       {:off, nil} ->
@@ -145,7 +145,7 @@ defmodule Persistomata.Test.Turnstile.Test do
       [
         fsm: [
           implementation: Persistomata.Test.Turnstile,
-          payload: 0,
+          payload: %{coins: 0},
           options: [transition_count: 6]
         ],
         context: [parent: parent]
@@ -162,12 +162,12 @@ defmodule Persistomata.Test.Turnstile.Test do
 
       {:coin, 1} ->
         assert_state :opened do
-          assert_payload(1)
+          assert_payload(%{coins: 1})
         end
 
       {:walk, 1} ->
         assert_state :closed do
-          assert_payload(0)
+          assert_payload(%{coins: 0})
         end
 
       {:off, nil} ->
@@ -183,7 +183,7 @@ defmodule Persistomata.Test.Turnstile.Test do
       [
         fsm: [
           implementation: Persistomata.Test.Turnstile,
-          payload: 0,
+          payload: %{coins: 0},
           options: [transition_count: 4]
         ],
         context: [parent: parent]
@@ -197,11 +197,11 @@ defmodule Persistomata.Test.Turnstile.Test do
 
       {:off, nil} ->
         assert_state :inactive do
-          assert_payload(0)
+          assert_payload(%{coins: 0})
         end
 
         assert_state :* do
-          assert_payload(0)
+          assert_payload(%{coins: 0})
         end
     end
   end

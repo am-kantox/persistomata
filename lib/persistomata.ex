@@ -33,12 +33,21 @@ defmodule Persistomata do
   @impl Supervisor
   @doc false
   def init(id) do
-    [
+    maybe_start()
+    |> Kernel.++([
       {Infinitomata, finitomata(id)},
       {Antenna, antenna(id)},
       {Rambla, name: rambla(id)},
       {Persistomata.RamblaMatcher, id: id}
-    ]
+    ])
     |> Supervisor.init(strategy: :one_for_one)
+  end
+
+  :rambla
+  |> Application.compile_env(:clickhouse, [])
+  |> Keyword.fetch(:connections)
+  |> case do
+    {:ok, _connections} -> defp maybe_start, do: [Persistomata.Pillar]
+    _ -> defp maybe_start, do: []
   end
 end

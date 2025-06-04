@@ -5,17 +5,16 @@ defmodule Pillar.Migrations.<%= inspect(@module) %> do
     """
     CREATE TABLE `<%= @table %>`
     (
-      monotonic Int64,
+      timestamp DateTime64(9),
+      node String,
       unique_integer Int64,
       id String,
       name String,
-      node String,
-      timestamp DateTime64(9),
       type String,
       payload JSON
     )
     ENGINE = MergeTree
-    PRIMARY KEY (monotonic, unique_integer)
+    PRIMARY KEY (timestamp, node, unique_integer)
     """
   end
 

@@ -10,17 +10,16 @@ defmodule Persistomata.Test.Clickhouse do
       create: """
       CREATE TABLE "persistomata/test/turnstile"
         (
-          monotonic Int64,
+          timestamp DateTime64(9),
+          node String,
           unique_integer Int64,
           id String,
           name String,
-          node String,
-          timestamp DateTime64(9),
           type String,
           payload JSON
         )
         ENGINE = MergeTree
-        PRIMARY KEY (monotonic, unique_integer)
+        PRIMARY KEY (timestamp, node, unique_integer)
       """,
       select: """
       SELECT * FROM "persistomata/test/turnstile"
@@ -33,17 +32,16 @@ defmodule Persistomata.Test.Clickhouse do
       create: """
       CREATE TABLE "persistomata/test/coffee_machine"
         (
-          monotonic Int64,
+          timestamp DateTime64(9),
+          node String,
           unique_integer Int64,
           id String,
           name String,
-          node String,
-          timestamp DateTime64(9),
           type String,
           payload JSON
         )
         ENGINE = MergeTree
-        PRIMARY KEY (monotonic, unique_integer)
+        PRIMARY KEY (timestamp, node, unique_integer)
       """,
       select: """
       SELECT * FROM "persistomata/test/coffee_machine"

@@ -63,7 +63,6 @@ defmodule Persistomata.RamblaMatcher do
          table <- Macro.underscore(module),
          times <- event.times,
          timestamp <- Keyword.get(times, :system),
-         monotonic <- Keyword.get(times, :monotonic),
          unique_integer <- Keyword.get(times, :unique_integer) do
       {type, payload} =
         case event.type do
@@ -81,19 +80,20 @@ defmodule Persistomata.RamblaMatcher do
       %{
         table: "`#{table}`",
         message: %{
-          monotonic: monotonic,
+          timestamp: timestamp,
+          node: event.node,
           unique_integer: unique_integer,
           id: event.id,
           name: event.fini_name,
           channel: channel,
           type: type,
-          node: event.node,
-          timestamp: timestamp,
           payload: payload
         }
       }
     end
   end
+
+  def ne(p), do: naive_encode(p)
 
   defp naive_encode(payload)
 
@@ -104,11 +104,11 @@ defmodule Persistomata.RamblaMatcher do
           nil ->
             payload |> Map.from_struct() |> naive_encode()
 
-          module ->
+          _module ->
             opts =
               payload |> Map.get(:__meta__, %{}) |> get_in([:encode_options]) |> Kernel.||([])
 
-            module.encode(payload, opts)
+            Jason.encode!(payload, opts)
         end
       end
 
@@ -118,11 +118,11 @@ defmodule Persistomata.RamblaMatcher do
           nil ->
             payload |> Map.from_struct() |> naive_encode()
 
-          module ->
+          _module ->
             opts =
               payload |> Map.get(:__meta__, %{}) |> get_in([:encode_options]) |> Kernel.||([])
 
-            module.encode(payload, opts)
+            JSON.encode!(payload, opts)
         end
       end
 
