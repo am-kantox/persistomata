@@ -9,6 +9,8 @@ defmodule Persistomata.Test.Turnstile do
     closed --> |off| inactive
   """
 
+  use Persistomata
+
   use Finitomata,
     fsm: @fsm,
     auto_terminate: true,
@@ -71,41 +73,4 @@ defmodule Persistomata.Test.Turnstile do
   # def encode(payload) when is_integer(payload), do: {:ok, {:json, %{coins: payload}}}
   # def encode(payload) when is_atom(payload), do: {:ok, {:json, %{state: payload}}}
   # def encode(other), do: {:error, other}
-
-  defimpl Finitomata.Persistency.Persistable do
-    @moduledoc """
-    Implementation of `Finitomata.Persistency.Persistable` for `Turnstile`.
-    """
-
-    require Logger
-
-    @doc "Loads the entity from some external storage"
-    def load(%Persistomata.Test.Turnstile{} = data), do: {:idle, data}
-
-    def load({{:via, Registry, {_, name}}, %turnstile{} = data}) do
-      case Persistomata.Pillar.load(turnstile, name) do
-        {:ok, %{state: state, value: value}} ->
-          {state, struct!(turnstile, value)}
-
-        {:ok, []} ->
-          {:idle, data}
-
-        error ->
-          Logger.error("Error loading value for ‹#{name}›: " <> inspect(error))
-          {:idle, data}
-      end
-    end
-
-    def load(data) do
-      Logger.warning("Unexpected argument to load: ‹" <> inspect(data) <> "›")
-      {:idle, %Persistomata.Test.Turnstile{coins: 0}}
-    end
-
-    @doc "Persists the transitioned entity to some external storage"
-    def store(_data, _info), do: :ok
-
-    @doc "Persists the error happened while an attempt to transition the entity"
-    def store_error(data, reason, info),
-      do: Logger.debug("STORE ERROR: " <> inspect(data: data, reason: reason, info: info))
-  end
 end

@@ -50,4 +50,63 @@ defmodule Persistomata do
     {:ok, _connections} -> defp maybe_start, do: [Persistomata.Pillar]
     _ -> defp maybe_start, do: []
   end
+
+  @doc "The hook to inject stuff into generated implementations"
+  defmacro __before_compile__(_env) do
+    module = __CALLER__.module
+    fsm = Module.get_attribute(module, :__config__)
+    entry = fsm.entry
+    entry_state = Enum.find(fsm.fsm, &match?(%{event: ^entry}, &1)).to
+
+    quote generated: true, location: :keep do
+      defimpl Finitomata.Persistency.Persistable do
+        @moduledoc """
+        Implementation of `Finitomata.Persistency.Persistable` for `#{inspect(unquote(module))}`.
+        """
+
+        require Logger
+
+        @doc "Loads the entity from some external storage"
+        def load(%unquote(module){} = data), do: {unquote(entry_state), data}
+
+        def load({{:via, Registry, {_, name}}, %module{} = data}) do
+          case Persistomata.Pillar.load(module, name) do
+            {:ok, %{state: state, value: value}} ->
+              {state, struct!(module, value)}
+
+            {:ok, []} ->
+              {unquote(entry_state), data}
+
+            error ->
+              Logger.error("Error loading value for ‹#{name}›: " <> inspect(error))
+              {unquote(entry_state), data}
+          end
+        end
+
+        def load(data) do
+          Logger.warning("Unexpected argument to load: ‹" <> inspect(data) <> "›")
+          {unquote(entry_state), %unquote(module){}}
+        end
+
+        @doc "Persists the transitioned entity to some external storage"
+        def store(_data, _info), do: :ok
+
+        @doc "Persists the error happened while an attempt to transition the entity"
+        def store_error(data, reason, info),
+          do: Logger.debug("STORE ERROR: " <> inspect(data: data, reason: reason, info: info))
+      end
+    end
+  end
+
+  @doc false
+  defmacro __using__(opts \\ []) do
+    quote generated: true, location: :keep do
+      @before_compile Persistomata
+
+      @persistomata_opts unquote(opts)
+
+      @doc false
+      def persistomata_opts, do: @persistomata_opts
+    end
+  end
 end

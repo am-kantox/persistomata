@@ -56,7 +56,9 @@ defmodule Mix.Tasks.Persistomata.Gen.Fsm do
             "--generate-test",
             true,
             "--auto-terminate",
-            Keyword.fetch!(options, :auto_terminate)
+            Keyword.fetch!(options, :auto_terminate),
+            "--callback",
+            "&" <> inspect(__MODULE__) <> ".amend_fsm_file/2"
           ] ++ fsm_file_option ++ timer_option
 
         Mix.Task.run("finitomata.generate", options)
@@ -64,6 +66,25 @@ defmodule Mix.Tasks.Persistomata.Gen.Fsm do
 
       {:error, message} ->
         Mix.raise(message)
+    end
+  end
+
+  def amend_fsm_file(module, file) do
+    with {:ok, content} <- File.read(file),
+         true <-
+           Mix.shell().yes?("Amend generated #{inspect(module)} with Persistomata goodness?") do
+      content =
+        content
+        |> String.replace(
+          "use Finitomata,",
+          "use Persistomata\n\nuse Finitomata, persistency: Finitomata.Persistency.Protocol,"
+        )
+        |> String.replace(
+          "defstruct ",
+          "@derive JSON.Encoder\ndefstruct "
+        )
+
+      File.write(file, Code.format_string!(content))
     end
   end
 
