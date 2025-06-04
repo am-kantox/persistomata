@@ -39,7 +39,7 @@ defmodule Persistomata.MixProject do
     [
       extra_applications: [],
       mod: {Persistomata.Application, []},
-      # start_phases: [{:persistomata_setup, []}],
+      start_phases: [{:persistomata_setup, []}],
       registered: [Persistomata, Persistomata.Application]
     ]
   end

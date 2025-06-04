@@ -3,7 +3,7 @@ defmodule Pillar.Migrations.<%= inspect(@module) %> do
 
   def up do
     """
-    CREATE TABLE `<%= @table %>`
+    CREATE TABLE IF NOT EXISTS `<%= @table %>`
     (
       timestamp DateTime64(9),
       node String,

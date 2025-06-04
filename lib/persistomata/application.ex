@@ -26,5 +26,12 @@ defmodule Persistomata.Application do
   end
 
   @impl Application
-  def start_phase(:persistomata_setup, _start_type, []), do: :ok
+  def start_phase(:persistomata_setup, _start_type, []) do
+    # credo:disable-for-lines: 2 Credo.Check.Refactor.Nesting
+    if Code.ensure_loaded?(Persistomata.Pillar.Migrator) and
+         File.exists?("priv/pillar_migrations"),
+       do: Persistomata.Pillar.Migrator.run()
+
+    :ok
+  end
 end

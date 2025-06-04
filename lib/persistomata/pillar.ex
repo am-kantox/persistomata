@@ -93,6 +93,15 @@
       end
     end
 
+    defmodule Persistomata.Pillar.Migrator do
+      @moduledoc false
+      @connection_string connections |> Keyword.values() |> List.first()
+      def run do
+        if is_nil(@connection_string), do: raise("Malformed connection string(s)")
+        Pillar.Migrations.migrate(Pillar.Connection.new(@connection_string))
+      end
+    end
+
   _ ->
     :ok
 end
