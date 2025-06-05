@@ -67,25 +67,25 @@ defmodule Persistomata do
         require Logger
 
         @doc "Loads the entity from some external storage"
-        def load(%unquote(module){} = data), do: {unquote(entry_state), data}
+        def load(%unquote(module){} = data), do: {:created, {unquote(entry_state), data}}
 
         def load({{:via, Registry, {_, name}}, %module{} = data}) do
           case Persistomata.Pillar.load(module, name) do
             {:ok, %{state: state, value: value}} ->
-              {state, struct!(module, value)}
+              {:loaded, {state, struct!(module, value)}}
 
             {:ok, []} ->
-              {unquote(entry_state), data}
+              {:created, {unquote(entry_state), data}}
 
             error ->
               Logger.error("Error loading value for ‹#{name}›: " <> inspect(error))
-              {unquote(entry_state), data}
+              {:failed, {unquote(entry_state), data}}
           end
         end
 
         def load(data) do
           Logger.warning("Unexpected argument to load: ‹" <> inspect(data) <> "›")
-          {unquote(entry_state), %unquote(module){}}
+          {:failed, {unquote(entry_state), %unquote(module){}}}
         end
 
         @doc "Persists the transitioned entity to some external storage"

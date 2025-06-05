@@ -75,7 +75,7 @@ defmodule Persistomata.RamblaMatcher do
         with true <- function_exported?(module, :encode, 1),
              {:ok, result} <- module.encode(payload),
              do: result,
-             else: (_ -> {:json, naive_encode(payload)})
+             else: (_ -> {:json, fix_numbers(payload)})
 
       %{
         table: "`#{table}`",
@@ -93,7 +93,7 @@ defmodule Persistomata.RamblaMatcher do
     end
   end
 
-  def ne(p), do: naive_encode(p)
+  def smart_encode(payload), do: naive_encode(payload)
 
   defp naive_encode(payload)
 
@@ -139,9 +139,9 @@ defmodule Persistomata.RamblaMatcher do
       end
   end
 
-  defp naive_encode(%{} = payload) do
-    Map.new(payload, fn {k, v} -> {k, naive_encode(v)} end)
-  end
+  defp naive_encode(%_{} = payload), do: payload |> Map.from_struct() |> naive_encode()
+
+  defp naive_encode(%{} = payload), do: Map.new(payload, fn {k, v} -> {k, naive_encode(v)} end)
 
   defp naive_encode(payload) when is_list(payload) do
     if Keyword.keyword?(payload),
@@ -156,6 +156,33 @@ defmodule Persistomata.RamblaMatcher do
   defp naive_encode(payload) when is_atom(payload), do: Atom.to_string(payload)
 
   defp naive_encode(payload) do
+    case String.Chars.impl_for(payload) do
+      nil -> inspect(payload)
+      module -> module.to_string(payload)
+    end
+  end
+
+  defp fix_numbers(payload)
+
+  defp fix_numbers(%_{} = payload), do: payload |> Map.from_struct() |> fix_numbers()
+
+  defp fix_numbers(%{} = payload), do: Map.new(payload, fn {k, v} -> {k, fix_numbers(v)} end)
+
+  defp fix_numbers(payload) when is_list(payload) do
+    if Keyword.keyword?(payload),
+      do: payload |> Map.new() |> fix_numbers(),
+      else: Enum.map(payload, &fix_numbers/1)
+  end
+
+  defp fix_numbers(payload) when is_number(payload), do: 1.0 * payload
+
+  defp fix_numbers(payload)
+       when is_nil(payload) or is_boolean(payload) or is_binary(payload),
+       do: payload
+
+  defp fix_numbers(payload) when is_atom(payload), do: Atom.to_string(payload)
+
+  defp fix_numbers(payload) do
     case String.Chars.impl_for(payload) do
       nil -> inspect(payload)
       module -> module.to_string(payload)

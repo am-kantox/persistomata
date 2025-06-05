@@ -47,7 +47,7 @@ defmodule Persistomata.MixProject do
   defp deps do
     [
       {:pillar, "~> 0.39"},
-      {:finitomata, "~> 0.32"},
+      {:finitomata, "~> 0.33"},
       {:telemetria, "~> 0.22"},
       {:rambla, "~> 1.4"},
       {:antenna, "~> 0.4"},
