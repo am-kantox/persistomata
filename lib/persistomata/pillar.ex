@@ -25,7 +25,7 @@
         limit = if is_integer(limit), do: "LIMIT #{limit}"
 
         select("""
-        SELECT name, argMax(payload.state, timestamp) as state
+        SELECT name, argMax(payload, timestamp) as payload
         FROM `#{table}`
         WHERE type = 'state'
         GROUP BY name
@@ -58,23 +58,15 @@
       def load(module, name) do
         table = Macro.underscore(module)
 
-        with {:ok, [%{"payload" => %{"value" => value}}]} <-
+        with {:ok, [%{"payload" => %{"value" => value, "state" => state}}]} <-
                select("""
                SELECT payload
-               FROM `#{table}`
-               WHERE type = 'value' AND name = '#{name}'
-               ORDER BY timestamp DESC, node DESC, unique_integer DESC
-               LIMIT 1
-               """),
-             {:ok, value} <- decode(module, value),
-             {:ok, [%{"payload.state" => state}]} <-
-               select("""
-               SELECT payload.state
                FROM `#{table}`
                WHERE type = 'state' AND name = '#{name}'
                ORDER BY timestamp DESC, node DESC, unique_integer DESC
                LIMIT 1
                """),
+             {:ok, value} <- decode(module, value),
              do: {:ok, %{state: String.to_existing_atom(state), value: value}}
       end
 

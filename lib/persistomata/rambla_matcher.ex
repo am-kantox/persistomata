@@ -15,6 +15,13 @@ defmodule Persistomata.RamblaMatcher do
 
   require Antenna
 
+  @match_channels Application.compile_env(:persistomata, :match_channels, [
+                    :init,
+                    :state_changed,
+                    :mutating,
+                    :errored
+                  ])
+
   @behaviour Antenna.Matcher
 
   @doc false
@@ -35,14 +42,14 @@ defmodule Persistomata.RamblaMatcher do
       Persistomata.antenna(id),
       {:finitomata, _},
       Persistomata.RamblaMatcher,
-      channels: [:init, :state_changed, :mutating]
+      channels: @match_channels
     )
 
     Antenna.match(
       Persistomata.antenna(id),
       {:finitomata_bulk, _},
       Persistomata.RamblaMatcher,
-      channels: [:init, :state_changed, :mutating]
+      channels: @match_channels
     )
 
     {:noreply, state}
@@ -66,15 +73,23 @@ defmodule Persistomata.RamblaMatcher do
          unique_integer <- Keyword.get(times, :unique_integer) do
       {type, payload} =
         case event.type do
-          {:init, payload} -> {:init, %{value: payload}}
-          {:state_changed, state} -> {:state, %{state: state}}
-          {:mutating, _, payload} -> {:value, %{value: payload}}
+          {:init, payload} ->
+            {:init, %{value: payload}}
+
+          {:errored, {entering_state, state}, payload} ->
+            {:errored, %{state: state, entering_state: entering_state, value: payload}}
+
+          {:state_changed, state, payload} ->
+            {:state, %{state: state, value: payload}}
+
+          {:mutating, _, payload} ->
+            {:value, %{value: payload}}
         end
 
       payload =
         with true <- function_exported?(module, :encode, 1),
-             {:ok, result} <- module.encode(payload),
-             do: result,
+             {:ok, result} <- module.encode(payload.value),
+             do: Map.put(payload, :value, result),
              else: (_ -> {:json, fix_numbers(payload)})
 
       %{

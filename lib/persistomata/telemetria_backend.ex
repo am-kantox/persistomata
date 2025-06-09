@@ -69,7 +69,7 @@ defmodule Telemetria.Backend.Persistomata do
       metadata.args
       |> Keyword.values()
       |> Enum.map(fn
-        %Finitomata.State{current: state} -> {:->, state}
+        %Finitomata.State{current: state, payload: payload} -> {state, payload}
         other -> other
       end)
 
@@ -152,7 +152,12 @@ defmodule Telemetria.Backend.Persistomata do
           | {:mutating, Finitomata.State.payload(), Finitomata.State.payload()}
           | {:errored, :init | :transition, any()}
   defp extract_type(fun, result, args)
-  defp extract_type(:safe_on_enter, _ok, [state, _]), do: {:state_changed, state}
+
+  defp extract_type(:safe_on_enter, _ok, [state, {state, payload}]),
+    do: {:state_changed, state, payload}
+
+  defp extract_type(:safe_on_enter, _ok, [entering_state, {state, payload}]),
+    do: {:errored, {entering_state, state}, payload}
 
   defp extract_type(:safe_on_start, {:stop, reason}, _payload), do: {:errored, :init, reason}
   defp extract_type(:safe_on_start, {_, payload}, _payload), do: {:init, payload}

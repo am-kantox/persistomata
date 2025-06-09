@@ -7,6 +7,12 @@ defmodule Persistomata.Test.Clickhouse do
       drop: """
       DROP TABLE "persistomata/test/turnstile"
       """,
+      drop_latest: """
+      DROP TABLE "persistomata/test/turnstile/latest"
+      """,
+      drop_view: """
+      DROP TABLE "persistomata/test/turnstile/latest/view"
+      """,
       create: """
       CREATE TABLE "persistomata/test/turnstile"
         (
@@ -20,6 +26,28 @@ defmodule Persistomata.Test.Clickhouse do
         )
         ENGINE = MergeTree
         PRIMARY KEY (timestamp, node, unique_integer)
+      """,
+      create_latest: """
+      CREATE TABLE "persistomata/test/turnstile/latest"
+        (
+          id String,
+          name FixedString(36),
+          latest_timestamp DateTime64(9),
+          payload JSON
+        )
+        ENGINE = SummingMergeTree
+        PRIMARY KEY (id, name, latest_timestamp)
+      """,
+      create_view: """
+      CREATE MATERIALIZED VIEW "persistomata/test/turnstile/latest/view" TO "persistomata/test/turnstile/latest" AS
+        SELECT
+          id,
+          name,
+          max(timestamp) AS latest_timestamp,
+          argMax(payload, timestamp) as payload
+        FROM "persistomata/test/turnstile"
+        where type = 'state'
+        GROUP BY id, name
       """,
       select: """
       SELECT * FROM "persistomata/test/turnstile"
@@ -54,8 +82,17 @@ defmodule Persistomata.Test.Clickhouse do
 
   def query(query), do: Conn.query(query)
 
-  def drop_table_turnstile, do: query(@turnstile_queries.drop)
-  def create_table_turnstile, do: query(@turnstile_queries.create)
+  def drop_table_turnstile do
+    query(@turnstile_queries.drop_view)
+    query(@turnstile_queries.drop_latest)
+    query(@turnstile_queries.drop)
+  end
+
+  def create_table_turnstile do
+    query(@turnstile_queries.create)
+    query(@turnstile_queries.create_latest)
+    query(@turnstile_queries.create_view)
+  end
 
   def drop_table_coffee_machine, do: query(@coffee_machine_queries.drop)
   def create_table_coffee_machine, do: query(@coffee_machine_queries.create)

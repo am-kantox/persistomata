@@ -2,20 +2,44 @@ defmodule Pillar.Migrations.<%= inspect(@module) %> do
   @moduledoc false
 
   def up do
-    """
-    CREATE TABLE IF NOT EXISTS `<%= @table %>`
-    (
-      timestamp DateTime64(9),
-      node FixedString(255),
-      unique_integer Int64,
-      id String,
-      name FixedString(36),
-      type FixedString(16),
-      payload JSON
-    )
-    ENGINE = MergeTree
-    PRIMARY KEY (timestamp, node, unique_integer)
-    """
+    [
+      """
+      CREATE TABLE IF NOT EXISTS `<%= @table %>`
+      (
+        timestamp DateTime64(9),
+        node FixedString(255),
+        unique_integer Int64,
+        id String,
+        name FixedString(36),
+        type FixedString(16),
+        payload JSON
+      )
+      ENGINE = MergeTree
+      PRIMARY KEY (timestamp, node, unique_integer)
+      """,
+      """
+      CREATE TABLE IF NOT EXISTS `<%= @table %>/__latest__`
+        (
+          id String,
+          name FixedString(36),
+          latest_timestamp DateTime64(9),
+          payload JSON
+        )
+        ENGINE = SummingMergeTree
+        PRIMARY KEY (id, name, latest_timestamp)
+      """,
+      """
+      CREATE MATERIALIZED VIEW `<%= @table %>/__latest__/__view__` TO `<%= @table %>/__latest__` AS
+        SELECT
+          id,
+          name,
+          max(timestamp) AS latest_timestamp,
+          argMax(payload, timestamp) as payload
+        FROM "persistomata/test/turnstile"
+        where type = 'state'
+        GROUP BY id, name
+      """
+    ] |> Enum.join(";\n")
   end
 
   def down do
