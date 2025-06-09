@@ -126,14 +126,20 @@ defmodule Mix.Tasks.Persistomata.Gen.Fsm do
       |> String.replace(~r/\W+/, "-")
 
     File.mkdir_p!(path)
-    migration_path = module |> Macro.underscore() |> String.replace("\/", "-")
-    target_file = Path.join(path, "#{dt}_#{migration_path}.exs")
+    table = Macro.underscore(module)
+    migration_path = String.replace(table, "\/", "-")
 
-    Mix.Generator.copy_template(
-      Path.expand("pillar_migration.eex", __DIR__),
-      target_file,
-      module: module,
-      table: Macro.underscore(module)
-    )
+    ~w[table view materialized_view]
+    |> Enum.with_index(1)
+    |> Enum.each(fn {suffix, idx} ->
+      target_file = Path.join(path, "#{dt}_#{idx}_#{suffix}_#{migration_path}.exs")
+
+      Mix.Generator.copy_template(
+        Path.expand("pillar_migration_#{suffix}.eex", __DIR__),
+        target_file,
+        module: module,
+        table: Macro.underscore(module)
+      )
+    end)
   end
 end

@@ -1,0 +1,23 @@
+defmodule Pillar.Migrations.<%= inspect(@module).View %> do
+  @moduledoc false
+
+  def up do
+    """
+    CREATE TABLE IF NOT EXISTS `<%= @table %>/__latest__`
+      (
+        id String,
+        name FixedString(36),
+        latest_timestamp DateTime64(9),
+        payload JSON
+      )
+      ENGINE = SummingMergeTree
+      PRIMARY KEY (id, name, latest_timestamp)
+    """
+  end
+
+  def down do
+    """
+    DROP TABLE `<%= @table %>/__latest__`
+    """
+  end
+end

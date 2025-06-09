@@ -1,0 +1,26 @@
+defmodule Pillar.Migrations.<%= inspect(@module) %>.Table do
+  @moduledoc false
+
+  def up do
+    """
+    CREATE TABLE IF NOT EXISTS `<%= @table %>`
+    (
+      timestamp DateTime64(9),
+      node FixedString(255),
+      unique_integer Int64,
+      id String,
+      name FixedString(36),
+      type FixedString(16),
+      payload JSON
+    )
+    ENGINE = MergeTree
+    PRIMARY KEY (timestamp, node, unique_integer)
+    """
+  end
+
+  def down do
+    """
+    DROP TABLE `<%= @table %>`
+    """
+  end
+end

@@ -1,0 +1,23 @@
+defmodule Pillar.Migrations.<%= inspect(@module).View.Materialized %> do
+  @moduledoc false
+
+  def up do
+    """
+    CREATE MATERIALIZED VIEW `<%= @table %>/__latest__/__view__` TO `<%= @table %>/__latest__` AS
+      SELECT
+        id,
+        name,
+        max(timestamp) AS latest_timestamp,
+        argMax(payload, timestamp) as payload
+      FROM "persistomata/test/turnstile"
+      where type = 'state'
+      GROUP BY id, name
+    """
+  end
+
+  def down do
+    """
+    DROP TABLE `<%= @table %>/__latest__/__view__`
+    """
+  end
+end
