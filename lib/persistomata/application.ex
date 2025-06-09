@@ -4,6 +4,11 @@ defmodule Persistomata.Application do
   use Elixir.Application
 
   @app_args Application.compile_env(:persistomata, :app_args, [])
+  @pillar_migrations_path Application.compile_env(
+                            :persistomata,
+                            :pillar_migrations,
+                            "priv/pillar_migrations"
+                          )
 
   @impl Elixir.Application
   def start(_type, args) do
@@ -29,9 +34,11 @@ defmodule Persistomata.Application do
   def start_phase(:persistomata_setup, _start_type, []) do
     # credo:disable-for-lines: 2 Credo.Check.Refactor.Nesting
     if Code.ensure_loaded?(Persistomata.Pillar.Migrator) and
-         File.exists?("priv/pillar_migrations"),
+         File.exists?(@pillar_migrations_path),
        do: Persistomata.Pillar.Migrator.run()
 
     :ok
   end
+
+  def migrations_path, do: @pillar_migrations_path
 end

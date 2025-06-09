@@ -62,7 +62,7 @@ defmodule Mix.Tasks.Persistomata.Gen.Fsm do
           ] ++ fsm_file_option ++ timer_option
 
         Mix.Task.run("finitomata.generate", options)
-        generate_migration(module)
+        generate_migration(module, Persistomata.Application.migrations_path())
 
       {:error, message} ->
         Mix.raise(message)
@@ -114,9 +114,7 @@ defmodule Mix.Tasks.Persistomata.Gen.Fsm do
     end
   end
 
-  @default_path "priv/pillar_migrations"
-
-  defp generate_migration(module, path \\ @default_path) do
+  defp generate_migration(module, path) do
     dt =
       DateTime.utc_now()
       |> DateTime.truncate(:second)
