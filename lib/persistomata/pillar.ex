@@ -7,6 +7,8 @@
       @moduledoc """
       Helpers to deal with the CLickhouse backend
       """
+      require Logger
+
       @connection_strings Keyword.values(connections)
 
       use Pillar,

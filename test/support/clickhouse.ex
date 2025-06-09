@@ -11,11 +11,11 @@ defmodule Persistomata.Test.Clickhouse do
       CREATE TABLE "persistomata/test/turnstile"
         (
           timestamp DateTime64(9),
-          node String,
+          node FixedString(255),
           unique_integer Int64,
           id String,
-          name String,
-          type String,
+          name FixedString(36),
+          type FixedString(16),
           payload JSON
         )
         ENGINE = MergeTree
@@ -33,11 +33,11 @@ defmodule Persistomata.Test.Clickhouse do
       CREATE TABLE "persistomata/test/coffee_machine"
         (
           timestamp DateTime64(9),
-          node String,
+          node FixedString(255),
           unique_integer Int64,
           id String,
-          name String,
-          type String,
+          name FixedString(36),
+          type FixedString(16),
           payload JSON
         )
         ENGINE = MergeTree

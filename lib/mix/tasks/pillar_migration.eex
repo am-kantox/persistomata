@@ -6,11 +6,11 @@ defmodule Pillar.Migrations.<%= inspect(@module) %> do
     CREATE TABLE IF NOT EXISTS `<%= @table %>`
     (
       timestamp DateTime64(9),
-      node String,
+      node FixedString(255),
       unique_integer Int64,
       id String,
-      name String,
-      type String,
+      name FixedString(36),
+      type FixedString(16),
       payload JSON
     )
     ENGINE = MergeTree
