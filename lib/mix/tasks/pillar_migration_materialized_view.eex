@@ -9,7 +9,7 @@ defmodule Pillar.Migrations.<%= inspect(@module) %>.View.Materialized do
         name,
         max(timestamp) AS latest_timestamp,
         argMax(payload, timestamp) as payload
-      FROM "persistomata/test/turnstile"
+      FROM `<%= @table %>`
       where type = 'state'
       GROUP BY id, name
     """
