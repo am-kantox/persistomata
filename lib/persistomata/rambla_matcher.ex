@@ -69,7 +69,7 @@ defmodule Persistomata.RamblaMatcher do
     with module <- event.group,
          table <- Macro.underscore(module),
          times <- event.times,
-         timestamp <- Keyword.get(times, :system),
+         created_at <- Keyword.get(times, :system),
          unique_integer <- Keyword.get(times, :unique_integer) do
       {type, payload} =
         case event.type do
@@ -95,7 +95,7 @@ defmodule Persistomata.RamblaMatcher do
       %{
         table: "`#{table}`",
         message: %{
-          timestamp: timestamp,
+          created_at: created_at,
           node: event.node,
           unique_integer: unique_integer,
           id: event.id,

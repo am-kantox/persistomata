@@ -8,15 +8,15 @@ defmodule Persistomata.Test.Clickhouse do
       DROP TABLE "persistomata/test/turnstile"
       """,
       drop_latest: """
-      DROP TABLE "persistomata/test/turnstile/latest"
+      DROP TABLE "persistomata/test/turnstile/__latest__"
       """,
       drop_view: """
-      DROP TABLE "persistomata/test/turnstile/latest/view"
+      DROP TABLE "persistomata/test/turnstile/__latest__/__view__"
       """,
       create: """
       CREATE TABLE "persistomata/test/turnstile"
         (
-          timestamp DateTime64(9),
+          created_at DateTime64(9),
           node FixedString(255),
           unique_integer Int64,
           id String,
@@ -25,29 +25,31 @@ defmodule Persistomata.Test.Clickhouse do
           payload JSON
         )
         ENGINE = MergeTree
-        PRIMARY KEY (timestamp, node, unique_integer)
+        PRIMARY KEY (created_at, node, unique_integer)
       """,
       create_latest: """
-      CREATE TABLE "persistomata/test/turnstile/latest"
+      CREATE TABLE "persistomata/test/turnstile/__latest__"
         (
           id String,
           name FixedString(36),
-          latest_timestamp DateTime64(9),
+          updated_at DateTime64(9),
           payload JSON
         )
-        ENGINE = SummingMergeTree
-        PRIMARY KEY (id, name, latest_timestamp)
+        ENGINE = ReplacingMergeTree(updated_at)
+        ORDER BY (id, name)
+        PRIMARY KEY (id, name)
       """,
       create_view: """
-      CREATE MATERIALIZED VIEW "persistomata/test/turnstile/latest/view" TO "persistomata/test/turnstile/latest" AS
+      CREATE MATERIALIZED VIEW "persistomata/test/turnstile/__latest__/__view__" TO "persistomata/test/turnstile/__latest__" AS
         SELECT
           id,
           name,
-          max(timestamp) AS latest_timestamp,
-          argMax(payload, timestamp) as payload
+          max(created_at) AS updated_at,
+          argMax(payload, created_at) as payload
         FROM "persistomata/test/turnstile"
-        where type = 'state'
-        GROUP BY id, name
+        WHERE type = 'state'
+        GROUP BY (id, name)
+        ORDER BY updated_at DESC
       """,
       select: """
       SELECT * FROM "persistomata/test/turnstile"
@@ -83,25 +85,34 @@ defmodule Persistomata.Test.Clickhouse do
   def query(query), do: Conn.query(query)
 
   def drop_table_turnstile do
-    query(@turnstile_queries.drop_view)
-    query(@turnstile_queries.drop_latest)
-    query(@turnstile_queries.drop)
+    {:drop_turnstile,
+     [
+       query(@turnstile_queries.drop_view),
+       query(@turnstile_queries.drop_latest),
+       query(@turnstile_queries.drop)
+     ]}
   end
 
   def create_table_turnstile do
-    query(@turnstile_queries.create)
-    query(@turnstile_queries.create_latest)
-    query(@turnstile_queries.create_view)
+    {:create_turnstile,
+     [
+       query(@turnstile_queries.create),
+       query(@turnstile_queries.create_latest),
+       query(@turnstile_queries.create_view)
+     ]}
   end
 
   def drop_table_coffee_machine, do: query(@coffee_machine_queries.drop)
   def create_table_coffee_machine, do: query(@coffee_machine_queries.create)
 
   def prepare do
-    drop_table_turnstile()
-    drop_table_coffee_machine()
-    create_table_turnstile()
-    create_table_coffee_machine()
+    {:prepare,
+     [
+       drop_table_turnstile(),
+       drop_table_coffee_machine(),
+       create_table_turnstile(),
+       create_table_coffee_machine()
+     ]}
   end
 
   def select_from_table_turnstile, do: Conn.select(@turnstile_queries.select)

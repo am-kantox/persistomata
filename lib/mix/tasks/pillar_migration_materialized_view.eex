@@ -7,11 +7,12 @@ defmodule Pillar.Migrations.<%= inspect(@module) %>.View.Materialized do
       SELECT
         id,
         name,
-        max(timestamp) AS latest_timestamp,
-        argMax(payload, timestamp) as payload
+        max(created_at) AS updated_at,
+        argMax(payload, created_at) as payload
       FROM `<%= @table %>`
-      where type = 'state'
-      GROUP BY id, name
+      WHERE type = 'state'
+      GROUP BY (id, name)
+      ORDER BY updated_at DESC
     """
   end
 

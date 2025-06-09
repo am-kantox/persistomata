@@ -7,11 +7,12 @@ defmodule Pillar.Migrations.<%= inspect(@module) %>.View do
       (
         id String,
         name FixedString(36),
-        latest_timestamp DateTime64(9),
+        updated_at DateTime64(9),
         payload JSON
       )
-      ENGINE = SummingMergeTree
-      PRIMARY KEY (id, name, latest_timestamp)
+      ENGINE = ReplacingMergeTree(updated_at)
+      ORDER BY (id, name)
+      PRIMARY KEY (id, name)
     """
   end
 

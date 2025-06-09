@@ -30,54 +30,49 @@
       def table_name(:view, module) when is_atom(module),
         do: :latest |> table_name(module) |> Kernel.<>("/__view__")
 
-      def all(module, limit \\ nil) do
-        table = Macro.underscore(module)
-        limit = if is_integer(limit), do: "LIMIT #{limit}"
+      def all(module, opts \\ []) do
+        table = table_name(:view, module)
+
+        limit =
+          case Keyword.get(opts, :limit) do
+            limit when is_integer(limit) -> "LIMIT #{limit}"
+            _ -> ""
+          end
+
+        # [AM] [TODO] Add regexp as `name: {:re, ~r/.../}`
+        where =
+          case {Keyword.get(opts, :name), Keyword.get(opts, :active?, false)} do
+            {nil, true} -> "WHERE payload.state != '*'"
+            {nil, false} -> ""
+            {name, true} -> "WHERE name = '#{name}' AND payload.state != '*'"
+            {name, false} -> "WHERE name = '#{name}'"
+          end
 
         select("""
-        SELECT name, argMax(payload, timestamp) as payload
+        SELECT *
         FROM `#{table}`
-        WHERE type = 'state'
-        GROUP BY name
+        FINAL
+        #{where}
         #{limit}
         """)
       end
 
-      def active(module, limit \\ nil) do
-        table = Macro.underscore(module)
-        limit = if is_integer(limit), do: "LIMIT #{limit}"
-
-        with {:ok, active} <-
-               select("""
-               SELECT name
-               FROM
-               (
-                 SELECT
-                   name,
-                   argMax(payload.state, timestamp) as state
-                 FROM `#{table}`
-                 WHERE type = 'state'
-                 GROUP BY name
-               )
-               WHERE state != '*'
-               #{limit}
-               """),
-             do: {:ok, Enum.map(active, &Map.fetch!(&1, "name"))}
-      end
-
       def load(module, name) do
-        table = Macro.underscore(module)
+        table = table_name(:view, module)
 
         with {:ok, [%{"payload" => %{"value" => value, "state" => state}}]} <-
                select("""
                SELECT payload
                FROM `#{table}`
-               WHERE type = 'state' AND name = '#{name}'
-               ORDER BY timestamp DESC, node DESC, unique_integer DESC
-               LIMIT 1
+               FINAL
+               WHERE name = '#{name}' AND payload.state != '*'
                """),
-             {:ok, value} <- decode(module, value),
-             do: {:ok, %{state: String.to_existing_atom(state), value: value}}
+             {:ok, value} <- decode(module, value) do
+          {:ok, %{state: String.to_existing_atom(state), value: value}}
+        else
+          {:ok, []} -> {:error, :no_record}
+          {:error, error} -> {:error, error}
+        end
       end
 
       def find(module, filter, active? \\ true) do
