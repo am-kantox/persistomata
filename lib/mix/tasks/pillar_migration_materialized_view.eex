@@ -1,4 +1,4 @@
-defmodule Pillar.Migrations.<%= inspect(@module).View.Materialized %> do
+defmodule Pillar.Migrations.<%= inspect(@module) %>.View.Materialized do
   @moduledoc false
 
   def up do
