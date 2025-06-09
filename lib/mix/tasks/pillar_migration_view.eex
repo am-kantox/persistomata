@@ -3,7 +3,7 @@ defmodule Pillar.Migrations.<%= inspect(@module) %>.View do
 
   def up do
     """
-    CREATE TABLE IF NOT EXISTS `<%= @table %>/__latest__`
+    CREATE TABLE IF NOT EXISTS `<%= @latest %>`
       (
         id String,
         name FixedString(36),
@@ -17,7 +17,7 @@ defmodule Pillar.Migrations.<%= inspect(@module) %>.View do
 
   def down do
     """
-    DROP TABLE `<%= @table %>/__latest__`
+    DROP TABLE `<%= @latest %>`
     """
   end
 end

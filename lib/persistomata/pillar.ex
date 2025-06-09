@@ -20,6 +20,16 @@
         # Default query timeout
         timeout: 30_000
 
+      @doc false
+      def table_name(:original, module) when is_atom(module),
+        do: module |> Macro.underscore()
+
+      def table_name(:latest, module) when is_atom(module),
+        do: :original |> table_name(module) |> Kernel.<>("/__latest__")
+
+      def table_name(:view, module) when is_atom(module),
+        do: :latest |> table_name(module) |> Kernel.<>("/__view__")
+
       def all(module, limit \\ nil) do
         table = Macro.underscore(module)
         limit = if is_integer(limit), do: "LIMIT #{limit}"

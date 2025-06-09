@@ -3,7 +3,7 @@ defmodule Pillar.Migrations.<%= inspect(@module) %>.View.Materialized do
 
   def up do
     """
-    CREATE MATERIALIZED VIEW `<%= @table %>/__latest__/__view__` TO `<%= @table %>/__latest__` AS
+    CREATE MATERIALIZED VIEW `<%= @view %>` TO `<%= @latest %>` AS
       SELECT
         id,
         name,
@@ -17,7 +17,7 @@ defmodule Pillar.Migrations.<%= inspect(@module) %>.View.Materialized do
 
   def down do
     """
-    DROP TABLE `<%= @table %>/__latest__/__view__`
+    DROP TABLE `<%= @view %>`
     """
   end
 end

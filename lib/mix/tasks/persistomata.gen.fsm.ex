@@ -121,10 +121,10 @@ defmodule Mix.Tasks.Persistomata.Gen.Fsm do
       |> DateTime.to_iso8601()
       |> String.split("+", trim: true)
       |> hd()
-      |> String.replace(~r/\W+/, "-")
+      |> String.replace(~r/\D+/, "")
 
     File.mkdir_p!(path)
-    table = Macro.underscore(module)
+    table = Persistomata.Pillar.table_name(:original, module)
     migration_path = String.replace(table, "\/", "-")
 
     ~w[table view materialized_view]
@@ -136,7 +136,9 @@ defmodule Mix.Tasks.Persistomata.Gen.Fsm do
         Path.expand("pillar_migration_#{suffix}.eex", __DIR__),
         target_file,
         module: module,
-        table: Macro.underscore(module)
+        table: table,
+        latest: Persistomata.Pillar.table_name(:latest, module),
+        view: Persistomata.Pillar.table_name(:view, module)
       )
     end)
   end
