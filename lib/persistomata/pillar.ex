@@ -162,9 +162,24 @@
     defmodule Persistomata.Pillar.Migrator do
       @moduledoc false
       @connection_string connections |> Keyword.values() |> List.first()
-      def run do
+
+      def run(path \\ Persistomata.Application.migrations_path()) do
         if is_nil(@connection_string), do: raise("Malformed connection string(s)")
-        Pillar.Migrations.migrate(Pillar.Connection.new(@connection_string))
+
+        @connection_string
+        |> Pillar.Connection.new()
+        |> Pillar.Migrations.migrate(path)
+      end
+
+      def rollback(count_of_migrations \\ 1, path \\ Persistomata.Application.migrations_path()) do
+        if is_nil(@connection_string), do: raise("Malformed connection string(s)")
+
+        @connection_string
+        |> Pillar.Connection.new()
+        |> Pillar.Migrations.rollback(
+          path,
+          count_of_migrations
+        )
       end
     end
 

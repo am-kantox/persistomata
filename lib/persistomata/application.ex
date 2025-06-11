@@ -35,7 +35,7 @@ defmodule Persistomata.Application do
     # credo:disable-for-lines: 2 Credo.Check.Refactor.Nesting
     if Code.ensure_loaded?(Persistomata.Pillar.Migrator) and
          File.exists?(@pillar_migrations_path),
-       do: Persistomata.Pillar.Migrator.run()
+       do: Persistomata.Pillar.Migrator.run(@pillar_migrations_path)
 
     :ok
   end

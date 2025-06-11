@@ -62,7 +62,6 @@ defmodule Mix.Tasks.Persistomata.Gen.Fsm do
           ] ++ fsm_file_option ++ timer_option
 
         Mix.Task.run("finitomata.generate", options)
-        generate_migration(module, Persistomata.Application.migrations_path())
 
       {:error, message} ->
         Mix.raise(message)
@@ -84,7 +83,8 @@ defmodule Mix.Tasks.Persistomata.Gen.Fsm do
           "@derive JSON.Encoder\ndefstruct "
         )
 
-      File.write(file, Code.format_string!(content))
+      File.write!(file, Code.format_string!(content))
+      generate_migration(module, Persistomata.Application.migrations_path())
     end
   end
 
