@@ -3,7 +3,13 @@ defmodule Persistomata do
   Documentation for `Persistomata`.
   """
 
-  @id Application.compile_env(:persistomata, :id, Persistomata)
+  id = :persistomata |> Application.compile_env(:app_args, []) |> Keyword.get(:id, Persistomata)
+
+  if id != Persistomata do
+    IO.warn("Custom ID for Persistomata is not yet supported, falling back to `Persistomata`")
+  end
+
+  @id Persistomata
 
   @doc false
   def id, do: @id
@@ -11,7 +17,7 @@ defmodule Persistomata do
   @doc false
   def antenna(id), do: Module.concat(id, Antenna)
   @doc false
-  def finitomata(id), do: Module.concat(id, Finitomata)
+  def finitomata(id), do: Module.concat(id, Infinitomata)
   @doc false
   def rambla(id), do: Module.concat(id, Rambla)
 
@@ -33,7 +39,8 @@ defmodule Persistomata do
   @impl Supervisor
   @doc false
   def init(id) do
-    maybe_start()
+    id
+    |> maybe_start()
     |> Kernel.++([
       {Infinitomata, finitomata(id)},
       {Antenna, antenna(id)},
@@ -47,8 +54,17 @@ defmodule Persistomata do
   |> Application.compile_env(:clickhouse, [])
   |> Keyword.fetch(:connections)
   |> case do
-    {:ok, _connections} -> defp maybe_start, do: [Persistomata.Pillar]
-    _ -> defp maybe_start, do: []
+    {:ok, _connections} ->
+      defp maybe_start(id),
+        do: [%{id: Persistomata.Pillar, start: {__MODULE__, :maybe_start_pillar, [id]}}]
+
+    _ ->
+      defp maybe_start(_), do: []
+  end
+
+  def maybe_start_pillar(_id) do
+    with {:error, {:already_started, _pid}} <- Persistomata.Pillar.start_link(),
+         do: :ignore
   end
 
   @doc "The hook to inject stuff into generated implementations"
@@ -69,7 +85,7 @@ defmodule Persistomata do
         @doc "Loads the entity from some external storage"
         def load(data, opts \\ [])
 
-        def load(%unquote(module){} = data, opts) do
+        def load(%_{} = data, opts) do
           case Keyword.fetch(opts, :id) do
             {:ok, {:via, Registry, {_, name}}} ->
               case Persistomata.Pillar.load(unquote(module), to_string(name)) do

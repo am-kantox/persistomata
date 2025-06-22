@@ -96,12 +96,12 @@ defmodule Persistomata.MixProject do
 
   defp docs do
     [
-      main: "Persistomata",
+      main: "architecture",
       source_ref: "v#{@version}",
       canonical: "http://hexdocs.pm/#{@app}",
       logo: "stuff/#{@app}-48x48.png",
       source_url: "https://github.com/am-kantox/#{@app}",
-      extras: ~w[README.md],
+      extras: ~w[README.md stuff/architecture.md],
       groups_for_modules: [],
       groups_for_docs: [
         "Functions (Client)": &(&1[:section] == :client),

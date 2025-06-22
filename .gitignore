@@ -31,3 +31,5 @@ peeper-*.tar
 /.dialyzer/*plt*
 
 /config/.telemetria.config.json
+
+/.erl.history/

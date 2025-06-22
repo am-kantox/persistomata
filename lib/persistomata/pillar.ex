@@ -11,9 +11,13 @@
 
       @connection_strings Keyword.values(connections)
 
+      @persistomata_id :persistomata
+                       |> Application.compile_env(:app_args, [])
+                       |> Keyword.get(:id, Persistomata)
+
       use Pillar,
         connection_strings: @connection_strings,
-        name: __MODULE__,
+        name: Module.concat(@persistomata_id, __MODULE__),
         pool_size: 15,
         # Time to wait for a connection from the pool
         pool_timeout: 10_000,
@@ -162,18 +166,15 @@
     defmodule Persistomata.Pillar.Migrator do
       @moduledoc false
       @connection_string connections |> Keyword.values() |> List.first()
+      if is_nil(@connection_string), do: raise("Malformed connection string(s)")
 
       def run(path \\ Persistomata.Application.migrations_path()) do
-        if is_nil(@connection_string), do: raise("Malformed connection string(s)")
-
         @connection_string
         |> Pillar.Connection.new()
         |> Pillar.Migrations.migrate(path)
       end
 
       def rollback(count_of_migrations \\ 1, path \\ Persistomata.Application.migrations_path()) do
-        if is_nil(@connection_string), do: raise("Malformed connection string(s)")
-
         @connection_string
         |> Pillar.Connection.new()
         |> Pillar.Migrations.rollback(

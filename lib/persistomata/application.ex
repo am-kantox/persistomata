@@ -17,7 +17,7 @@ defmodule Persistomata.Application do
         do: Keyword.merge(@app_args, args),
         else: Keyword.put(@app_args, :id, args)
 
-    {children?, args} = Keyword.pop(args, :start_persistomata?, false)
+    {children?, args} = Keyword.pop(args, :start_persistomata?, true)
 
     id =
       case Keyword.fetch(args, :id) do

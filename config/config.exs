@@ -15,7 +15,13 @@ config :logger,
   default_formatter: [colors: [info: :magenta]],
   compile_time_purge_matching: [[level_lower_than: level]]
 
-config :finitomata, :telemetria, true
+config :finitomata,
+  telemetria: true,
+  telemetria_levels: [
+    all: :notice,
+    on_failure: :warning,
+    on_timer: :debug
+  ]
 
 config :telemetria,
   backend: Telemetria.Backend.Persistomata,
